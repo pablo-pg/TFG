@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, send_file
 from flask_socketio import SocketIO, emit
 import flask
 import json
@@ -168,9 +168,9 @@ def index():
             output_images = get_images(prompt_id)
 
             # Generar una URL única para la primera imagen (puedes adaptarlo según tus necesidades)
-            first_image_url = f'images/{prompt_id}.jpg'
-
-            return render_template('result.html', output_images=first_image_url)
+            first_image_url = f'static/images/{prompt_id}.jpg'
+            return send_file(first_image_url, as_attachment=True)
+            # return render_template('result.html', output_images=first_image_url)
         except Exception as e:
             print(f"Error en la aplicación Flask: {str(e)}")
             return jsonify({'status': 'error', 'message': 'Se produjo un error en la aplicación', 'error': str(e)})
