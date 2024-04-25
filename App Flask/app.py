@@ -160,6 +160,7 @@ def test():
 def index():
     if flask.request.method == 'POST':
         new_text = ''
+        is_web_request = False
         try:
             # Se intenta obtener el prompt por petición API. Si no funciona se lee desde la web
             try:
@@ -167,6 +168,7 @@ def index():
                 # print('prompt got via api')
             except:
                 print('prompt got via web')
+                is_web_request = True
                 new_text = flask.request.form['new_text']
             
             # Cargar el JSON predeterminado
@@ -180,7 +182,7 @@ def index():
             # print(f'comfyui response: {comfyui_response}')
 
             prompt_id = comfyui_response['prompt_id']
-            print('Prompt_id:', {prompt_id})
+            print('Prompt ID:', {prompt_id})
 
             # Esperar resultados del procesamiento
             output_images = get_images(prompt_id)
@@ -189,10 +191,13 @@ def index():
             first_image_url = f'static/images/{prompt_id}.jpg'
 
             # Se obtienen los datos de la imagen
-            print(imageTreatment(first_image_url))
+            fortniture_data = imageTreatment(first_image_url)
 
-            # Se descarga la imagen
-            return send_file(first_image_url, as_attachment=True)
+            if is_web_request:
+                # Se descarga la imagen
+                return send_file(first_image_url, as_attachment=True)
+            else:
+                return jsonify(fortniture_data)
             # return render_template('result.html', output_images=first_image_url)
         except Exception as e:
             print(f"Error en la aplicación Flask: {str(e)}")
