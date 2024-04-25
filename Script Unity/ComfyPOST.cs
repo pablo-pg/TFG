@@ -5,8 +5,12 @@ using System.Collections;
 public class ComfyPOST : MonoBehaviour
 
 {
-    public string apiUrl = " http://127.0.0.1:5000/test";
-    public string prompt = "A girl flying";
+    public string apiUrl = "http://127.0.0.1:5000/test-api";
+    public string prompt = "TFGPabloMap map of a square room with a small table at center";
+    public GameObject plane;
+
+    public delegate void OnDataGot();
+    public OnDataGot RoomWithTexture;
 
     // // Start is called before the first frame update
     void Start()
@@ -19,31 +23,28 @@ public class ComfyPOST : MonoBehaviour
     {
         using (UnityWebRequest www = UnityWebRequest.Post(apiUrl, json, "application/json"))
         {
+            Debug.Log("Sent POST request");
             yield return www.SendWebRequest();
 
             if (www.result != UnityWebRequest.Result.Success)
             {
                 Debug.LogError(www.error);
             }
-            else
-            {
-                Debug.Log("Form upload complete!");
+            else {
+                // Si se ha obtenido un resultado correcto
+                Debug.Log("Received POST data");
+                byte[] image = www.downloadHandler.data;
+
+                // Crear una textura desde la imagen obtenida
+                Texture2D texture = new Texture2D(1, 1);
+                texture.LoadImage(image);
+
+                // Asignar la textura al material del plano
+                Material planeMaterial = plane.GetComponent<Renderer>().material;
+                planeMaterial.mainTexture = texture;
+                // Se llama al notificador cuando se ha terminado el proceso
+                RoomWithTexture();
             }
         }
     }
-
-    // Función para aplicar la textura al plano
-    void ApplyTexture(byte[] imageData)
-    {
-        // Crear una textura a partir de los bytes de la imagen
-        Texture2D texture = new Texture2D(2, 2);
-        texture.LoadImage(imageData);
-
-        // Obtener el plano al que se aplicará la textura
-        MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
-
-        // Aplicar la textura al material del plano
-        meshRenderer.material.mainTexture = texture;
-    }
-
 }
