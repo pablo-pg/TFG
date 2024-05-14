@@ -1,7 +1,5 @@
 import cv2
 
-# image = cv2.imread('F:/TFG/App Flask/static/images/2b13bf54-8cbd-4a1d-bd17-f4064fe71a99.jpg')
-
 # Calculate the color thresholding and region props
 def imageTreatment(filename):
     frame = cv2.imread(filename)
@@ -20,22 +18,46 @@ def imageTreatment(filename):
     table_upper_color_bounds = (210,255,40)
 
     # Masks
-    # floor_mask = cv2.inRange(frame, floor_lower_color_bounds, floor_upper_color_bounds)
-    table_mask = cv2.inRange(frame, table_lower_color_bounds, table_upper_color_bounds)
-    chair_mask = cv2.inRange(frame, chair_lower_color_bounds, chair_upper_color_bounds)
-    door_mask = cv2.inRange(frame, door_lower_color_bounds, door_upper_color_bounds)
+    try:
+        # floor_mask = cv2.inRange(frame, floor_lower_color_bounds, floor_upper_color_bounds)
+        table_mask = cv2.inRange(frame, table_lower_color_bounds, table_upper_color_bounds)
+        chair_mask = cv2.inRange(frame, chair_lower_color_bounds, chair_upper_color_bounds)
+        door_mask = cv2.inRange(frame, door_lower_color_bounds, door_upper_color_bounds)
+    except Exception as err:
+        raise RuntimeError('Error creating the masks', err.args)
     
+    # Aplicar erode para los muebles que tocan (op morfologica)
+    # floor_mask_processed = cv2.morphologyEx(floor_mask, cv2.MORPH_OPEN, None)
+    table_mask_processed = cv2.morphologyEx(table_mask, cv2.MORPH_OPEN, None)
+    chair_mask_processed = cv2.morphologyEx(chair_mask, cv2.MORPH_OPEN, None)
+    door_mask_processed = cv2.morphologyEx(door_mask, cv2.MORPH_OPEN, None)
+
+    # floor_mask_processed = cv2.morphologyEx(floor_mask_processed, cv2.MORPH_CLOSE, None)
+    table_mask_processed = cv2.morphologyEx(table_mask_processed, cv2.MORPH_CLOSE, None)
+    chair_mask_processed = cv2.morphologyEx(chair_mask_processed, cv2.MORPH_CLOSE, None)
+    door_mask_processed = cv2.morphologyEx(door_mask_processed, cv2.MORPH_CLOSE, None)
+
+    # Show images with contours and centroids
+    # cv2.imshow('Floor with contours', floor_with_props)
+    # cv2.imshow('Table with contours', table_mask_processed)
+    # cv2.imshow('Chair with contours', chair_mask_processed)
+    # cv2.imshow('Door with contours', door_mask_processed)
+
+    # print('Press <q> to exit')
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+
     # Apply contours and centroid for each mask
     try:
-        table_regs = regionProps(table_mask.copy())
+        table_regs = regionProps(table_mask_processed.copy())
     except Exception as err:
         raise RuntimeError('Error getting region props of table', err.args)
     try:
-        chair_regs = regionProps(chair_mask.copy())
+        chair_regs = regionProps(chair_mask_processed.copy())
     except Exception as err:
         raise RuntimeError('Error getting region props of chair', err.args)
     try:
-        door_regs = regionProps(door_mask.copy())
+        door_regs = regionProps(door_mask_processed.copy())
     except Exception as err:
         raise RuntimeError('Error getting region props of door:', err.args)
     
@@ -56,7 +78,7 @@ def imageTreatment(filename):
 # Returns the posittion and dimensions of the contours and its centroid
 # format:
 # {
-#   'mask': mask_image
+#   'mask': mask_image,
 #   'data': [
 #               {
 #                 "x":478,

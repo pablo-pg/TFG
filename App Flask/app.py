@@ -173,7 +173,6 @@ def index():
             
             # Cargar el JSON predeterminado
             prompt = json.loads(DEFAULT_PROMPT_JSON)
-
             # Modificar la frase del prompt con la introducida por el usuario
             prompt["6"]["inputs"]["text"] = new_text
 
