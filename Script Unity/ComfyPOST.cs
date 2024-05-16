@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 public class ComfyPOST : MonoBehaviour {
     public string apiUrl = "http://127.0.0.1:5000/test-api";
-    public string prompt = "TFGPabloMap map of a square room with a small table at center";
+    public string prompt = "TFGMapPablo map of a square room with a very big door at left, a table at center and a chair at top left, a small door at center right";
     // public GameObject plane;
     public GameObject chairPrefab;
     public GameObject doorPrefab;
@@ -77,6 +77,7 @@ public class ComfyPOST : MonoBehaviour {
                 string jsonString = System.Text.Encoding.UTF8.GetString(bytes_data);
                 Debug.Log("ALL DATA:\n\n" + jsonString);
                 RoomData data = JsonConvert.DeserializeObject<RoomData>(jsonString);
+
                 foreach (var chair in data.chairs) {
                     Debug.Log("Silla encontrada. \nPropiedades:\nx: " + chair.x + "\ny: " + chair.y);
                     chair.x /= scaleFactor;
@@ -89,6 +90,43 @@ public class ComfyPOST : MonoBehaviour {
                     GameObject instance = Instantiate(chairPrefab, position, Quaternion.identity);
                     // Escala el prefab según las dimensiones del rectángulo
                     instance.transform.localScale = new Vector3(chair.w * scale,  chair.w * scale, chair.h * scale);
+                    // Se calcula la rotacion en relacion a la mesa mas cercana
+                    var nearestTable = data.tables[0];
+                    float nearestDistance = Mathf.Infinity;
+                    foreach (var table in data.tables) {
+                        float distanceToTableX = Mathf.Abs(chair.centroid_x - table.centroid_x);
+                        float distanceToTableY = Mathf.Abs(chair.centroid_y - table.centroid_y);
+                        float totalDistance = Mathf.Sqrt((Mathf.Pow(distanceToTableX, 2)) + (Mathf.Pow(distanceToTableY, 2)));
+                        if (totalDistance < nearestDistance) {
+                            nearestDistance = totalDistance;
+                            nearestTable = table;
+                        }
+                    }
+                    // Tras calcular la mesa mas cercana, se calcula hacia donde debe rotar y se aplica la rotacion
+                    if (nearestTable != null) {
+                        if ((chair.x < nearestTable.x / scaleFactor) &&
+                            ((chair.x + chair.w < nearestTable.x / scaleFactor) ||
+                                Mathf.Approximately(chair.x + chair.w, nearestTable.x / scaleFactor))) {
+                            // la silla esta a la izquierda, la silla apunta a la der
+                            instance.transform.Rotate(0.0f, 90f, 0f);
+                            // Debug.Log("SILLA IZQ");
+                        } else if ((chair.x > nearestTable.x / scaleFactor) &&
+                            ((chair.x > (nearestTable.x / scaleFactor + nearestTable.w / scaleFactor)) ||
+                                Mathf.Approximately(chair.x, (nearestTable.x / scaleFactor + nearestTable.w / scaleFactor)))) {
+                            // La silla esta a la derecha, la silla apunta a la izq
+                            instance.transform.Rotate(0.0f, -90f, 0f);
+                            // Debug.Log("SILLA DER");
+                        } else if ((chair.y < nearestTable.y / scaleFactor) && 
+                            ((chair.y + chair.h < nearestTable.y / scaleFactor) ||
+                                Mathf.Approximately(chair.y + chair.h, nearestTable.y / scaleFactor))) {
+                                // La silla esta encima, la silla apunta hacia abajo
+                                instance.transform.Rotate(0.0f, 180f, 0f);
+                                // Debug.Log("SILLA ARRIBA");
+                        } else {
+                            // La silla esta debajo
+                            // Debug.Log("SILLA DEBAJO");
+                        }
+                    }
                 }
                 foreach (var door in data.doors) {
                     Debug.Log("Puerta encontrada. \nPropiedades:\nx: " + door.x + "\ny: " + door.y + "\nw: " + door.w + "\nh: " + door.h);
